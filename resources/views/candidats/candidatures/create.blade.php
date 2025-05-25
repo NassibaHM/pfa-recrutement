@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('content')
@@ -33,7 +34,7 @@
             <input type="hidden" name="offre_id" value="{{ $offre->id }}">
         </div>
 
-        <!-- Autres champs du formulaire (pré-remplis si nécessaire) -->
+        <!-- Autres champs du formulaire -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block">Nom complet</label>
@@ -62,27 +63,27 @@
 
             <div>
                 <label class="block">Formation</label>
-                <input type="text" name="formation" class="w-full border p-2 rounded" value="{{ old('formation', $offre->formation) }}">
+                <input type="text" name="formation" class="w-full border p-2 rounded" value="{{ old('formation') }}">
             </div>
 
             <div>
                 <label class="block">Expérience</label>
-                <input type="text" name="experience" class="w-full border p-2 rounded" value="{{ old('experience', $offre->experience) }}">
+                <input type="text" name="experience" class="w-full border p-2 rounded" value="{{ old('experience') }}">
             </div>
 
             <div>
                 <label class="block">Compétences Techniques</label>
-                <input type="text" name="competences_techniques" class="w-full border p-2 rounded" value="{{ old('competences_techniques', $offre->competences_techniques) }}">
+                <input type="text" name="competences_techniques" class="w-full border p-2 rounded" value="{{ old('competences_techniques') }}">
             </div>
 
             <div>
                 <label class="block">Compétences Linguistiques</label>
-                <input type="text" name="competences_linguistiques" class="w-full border p-2 rounded" value="{{ old('competences_linguistiques', $offre->competences_linguistiques) }}">
+                <input type="text" name="competences_linguistiques" class="w-full border p-2 rounded" value="{{ old('competences_linguistiques') }}">
             </div>
 
             <div>
                 <label class="block">Compétences Managériales</label>
-                <input type="text" name="competences_manageriales" class="w-full border p-2 rounded" value="{{ old('competences_manageriales', $offre->competences_manageriales) }}">
+                <input type="text" name="competences_manageriales" class="w-full border p-2 rounded" value="{{ old('competences_manageriales') }}">
             </div>
 
             <div class="md:col-span-2">

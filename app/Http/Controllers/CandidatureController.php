@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Candidature;
-use App\Models\Offre;
+use App\Models\Critere;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CandidatureController extends Controller
 {
-    // Affiche les candidatures du candidat connecté
     public function index()
     {
         $user = Auth::user();
@@ -18,18 +17,24 @@ class CandidatureController extends Controller
         return view('candidatures.index', compact('candidatures'));
     }
 
-    // Formulaire de candidature
     public function create($id)
     {
-        $offre = Offre::findOrFail($id);
+        $offre = Critere::findOrFail($id);
+        $hasApplied = Auth::check() && Candidature::where('user_id', Auth::id())
+            ->where('offre_id', $offre->id)
+            ->exists();
+
+        if ($hasApplied) {
+            return redirect()->route('candidat.offres')->with('error', 'Vous avez déjà postulé à cette offre.');
+        }
+
         return view('candidats.candidatures.create', compact('offre'));
     }
 
-    // Sauvegarder une nouvelle candidature (via formulaire de base avec fichier image)
     public function store(Request $request)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'nom' => 'required|string|max:255',
                 'email' => 'required|email',
                 'telephone' => 'required|string|max:20',
@@ -42,9 +47,17 @@ class CandidatureController extends Controller
                 'competences_manageriales' => 'nullable|string',
                 'certifications' => 'nullable|string',
                 'autres_informations' => 'nullable|string',
-                'offre_id' => 'required|exists:offres,id',
+                'offre_id' => 'required|exists:criteres,id',
                 'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
+
+            $hasApplied = Candidature::where('user_id', Auth::id())
+                ->where('offre_id', $validated['offre_id'])
+                ->exists();
+
+            if ($hasApplied) {
+                return redirect()->route('candidat.offres')->with('error', 'Vous avez déjà postulé à cette offre.');
+            }
 
             $photoPath = null;
             if ($request->hasFile('photo')) {
@@ -53,61 +66,53 @@ class CandidatureController extends Controller
 
             Candidature::create([
                 'user_id' => Auth::id(),
-                'offre_id' => $request->offre_id,
-                'nom' => $request->nom,
-                'email' => $request->email,
-                'telephone' => $request->telephone,
-                'adresse' => $request->adresse,
-                'date_naissance' => $request->date_naissance,
-                'formation' => $request->formation,
-                'experience' => $request->experience,
-                'competences_techniques' => $request->competences_techniques,
-                'competences_linguistiques' => $request->competences_linguistiques,
-                'competences_manageriales' => $request->competences_manageriales,
-                'certifications' => $request->certifications,
-                'autres_informations' => $request->autres_informations,
+                'offre_id' => $validated['offre_id'],
+                'nom' => $validated['nom'],
+                'email' => $validated['email'],
+                'telephone' => $validated['telephone'],
+                'adresse' => $validated['adresse'],
+                'date_naissance' => $validated['date_naissance'],
+                'formation' => $validated['formation'],
+                'experience' => $validated['experience'],
+                'competences_techniques' => $validated['competences_techniques'],
+                'competences_linguistiques' => $validated['competences_linguistiques'],
+                'competences_manageriales' => $validated['competences_manageriales'],
+                'certifications' => $validated['certifications'],
+                'autres_informations' => $validated['autres_informations'],
                 'photo' => $photoPath,
                 'etat' => 'en attente',
             ]);
 
-            // Log to confirm this point is reached
             Log::info('Candidature created successfully, redirecting to success page.', [
-                'offre_id' => $request->offre_id,
+                'offre_id' => $validated['offre_id'],
                 'user_id' => Auth::id()
             ]);
 
             return redirect()->route('candidature.success')->with('success', 'Candidature envoyée avec succès !');
         } catch (\Exception $e) {
-            // Log the error
             Log::error('Error in CandidatureController@store: ' . $e->getMessage());
             return back()->with('error', 'Une erreur est survenue : ' . $e->getMessage());
         }
     }
 
-    // Vue de succès après soumission
     public function success()
     {
         return view('candidats.candidatures.success');
     }
 
-    // Vue Mes Postes
     public function mesPostes()
     {
         $user = Auth::user();
-
-        $candidatures = Candidature::with(['offre.criteres'])->where('user_id', $user->id)->get();
-
+        $candidatures = Candidature::with(['offre'])->where('user_id', $user->id)->get();
         return view('candidats.mes-postes', compact('candidatures'));
     }
 
-    // Voir une candidature
     public function show($id)
     {
         $candidature = Candidature::findOrFail($id);
         return view('candidature.show', compact('candidature'));
     }
 
-    // Détails d'une candidature
     public function voirDetails($id)
     {
         $candidature = Candidature::with('offre')->findOrFail($id);
@@ -115,23 +120,20 @@ class CandidatureController extends Controller
         return view('candidatures.details', compact('candidature', 'offre'));
     }
 
-    // Afficher les candidatures par offre (pour le recruteur)
     public function afficherCandidatures($offre_id)
     {
-        $offre = Offre::findOrFail($offre_id);
+        $offre = Critere::findOrFail($offre_id);
         $candidatures = $offre->candidatures()->with('user')->orderByDesc('score')->get();
-
         return view('offres.candidatures', compact('offre', 'candidatures'));
     }
 
-    // Postuler à une offre avec scoring
     public function postuler(Request $request, $offre_id)
     {
         if (!Auth::check()) {
             return redirect()->route('login')->with('error', 'Veuillez vous connecter avant de postuler.');
         }
 
-        $offre = Offre::findOrFail($offre_id);
+        $offre = Critere::findOrFail($offre_id);
 
         $validated = $request->validate([
             'competences_techniques' => 'required|numeric',
@@ -148,7 +150,6 @@ class CandidatureController extends Controller
             'autres_informations' => 'nullable|string',
         ]);
 
-        // Vérification double candidature
         $exist = Candidature::where('offre_id', $offre_id)
             ->where('user_id', Auth::id())->first();
         if ($exist) {
@@ -164,13 +165,12 @@ class CandidatureController extends Controller
 
         $candidature->save();
 
-        return redirect()->route('offres.disponibles')->with('success', 'Candidature envoyée avec succès !');
+        return redirect()->route('candidat.offres')->with('success', 'Candidature envoyée avec succès !');
     }
 
     private function calculerScore($candidature, $offre)
     {
-        $critere = $offre->criteres()->first();
-
+        $critere = $offre; // Critere is the offer itself
         if (!$critere) return 0;
 
         $score = 0;

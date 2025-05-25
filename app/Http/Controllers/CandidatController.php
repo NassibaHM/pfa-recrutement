@@ -12,13 +12,14 @@ use App\Models\CandidatureStatus;
 use App\Models\Critere;
 use App\Notifications\CandidatureStatusNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CandidatController extends BaseController
 {
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role:recruteur')->only(['indexRecruteur', 'updateStatus', 'sendResponse', 'deleteNotification']);
+        $this->middleware('role:recruteur')->only(['indexRecruteur', 'updateStatus', 'sendResponse', 'deleteNotification', 'showDetails']);
     }
 
     public function index()
@@ -154,6 +155,42 @@ class CandidatController extends BaseController
         $offres = \App\Models\Offre::all();
 
         return view('candidats.index-recruteur', compact('candidatures', 'offres', 'offreId'));
+    }
+
+    public function showDetails($candidatureId)
+    {
+        try {
+            $candidature = Candidature::findOrFail($candidatureId);
+            if (Auth::user()->role !== 'recruteur') {
+                return response()->json(['success' => false, 'message' => 'Accès réservé aux recruteurs.'], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'candidature' => [
+                    'nom' => $candidature->nom,
+                    'email' => $candidature->email,
+                    'telephone' => $candidature->telephone,
+                    'adresse' => $candidature->adresse,
+                    'date_naissance' => $candidature->date_naissance,
+                    'formation' => $candidature->formation,
+                    'experience' => $candidature->experience,
+                    'competences_techniques' => $candidature->competences_techniques,
+                    'competences_linguistiques' => $candidature->competences_linguistiques,
+                    'competences_manageriales' => $candidature->competences_manageriales,
+                    'certifications' => $candidature->certifications,
+                    'autres_informations' => $candidature->autres_informations,
+                    'photo' => $candidature->photo,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch candidate details', [
+                'candidature_id' => $candidatureId,
+                'error' => $e->getMessage(),
+                'timestamp' => now()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Erreur lors de la récupération des détails: ' . $e->getMessage()], 500);
+        }
     }
 
     public function updateStatus(Request $request, $candidatureId)
@@ -378,56 +415,114 @@ class CandidatController extends BaseController
     }
 
     public function deleteNotification(Request $request, $id)
-{
-    try {
-        $user = Auth::user();
-        if ($user->role !== 'recruteur') {
-            Log::warning('Unauthorized attempt to delete notification', [
-                'user_id' => $user->id,
-                'notification_id' => $id,
-                'timestamp' => now()
-            ]);
-            return response()->json(['success' => false, 'message' => 'Accès réservé aux recruteurs.'], 403);
-        }
+    {
+        try {
+            $user = Auth::user();
+            if ($user->role !== 'recruteur') {
+                Log::warning('Unauthorized attempt to delete notification', [
+                    'user_id' => $user->id,
+                    'notification_id' => $id,
+                    'timestamp' => now()
+                ]);
+                return response()->json(['success' => false, 'message' => 'Accès réservé aux recruteurs.'], 403);
+            }
 
-        $notification = Notification::find($id);
-        if (!$notification) {
-            Log::error('Notification not found', [
-                'notification_id' => $id,
-                'user_id' => $user->id,
-                'timestamp' => now()
-            ]);
-            return response()->json(['success' => false, 'message' => 'Notification non trouvée.'], 404);
-        }
+            $notification = Notification::find($id);
+            if (!$notification) {
+                Log::error('Notification not found', [
+                    'notification_id' => $id,
+                    'user_id' => $user->id,
+                    'timestamp' => now()
+                ]);
+                return response()->json(['success' => false, 'message' => 'Notification non trouvée.'], 404);
+            }
 
-        $candidature = Candidature::find($notification->candidature_id);
-        if (!$candidature) {
-            Log::error('Candidature not found for notification', [
+            $candidature = Candidature::find($notification->candidature_id);
+            if (!$candidature) {
+                Log::error('Candidature not found for notification', [
+                    'notification_id' => $id,
+                    'candidature_id' => $notification->candidature_id,
+                    'user_id' => $user->id,
+                    'timestamp' => now()
+                ]);
+                return response()->json(['success' => false, 'message' => 'Candidature associée non trouvée.'], 404);
+            }
+
+            $notification->delete();
+            Log::info('Notification deleted by recruiter', [
                 'notification_id' => $id,
                 'candidature_id' => $notification->candidature_id,
                 'user_id' => $user->id,
                 'timestamp' => now()
             ]);
-            return response()->json(['success' => false, 'message' => 'Candidature associée non trouvée.'], 404);
+
+            return response()->json(['success' => true, 'message' => 'Notification supprimée avec succès.']);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete notification', [
+                'notification_id' => $id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'timestamp' => now()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Erreur lors de la suppression: ' . $e->getMessage()], 500);
         }
-
-        $notification->delete();
-        Log::info('Notification deleted by recruiter', [
-            'notification_id' => $id,
-            'candidature_id' => $notification->candidature_id,
-            'user_id' => $user->id,
-            'timestamp' => now()
-        ]);
-
-        return response()->json(['success' => true, 'message' => 'Notification supprimée avec succès.']);
-    } catch (\Exception $e) {
-        Log::error('Failed to delete notification', [
-            'notification_id' => $id,
-            'user_id' => $user->id,
-            'error' => $e->getMessage(),
-            'timestamp' => now()
-        ]);
-        return response()->json(['success' => false, 'message' => 'Erreur lors de la suppression: ' . $e->getMessage()], 500);
     }
-}
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'offre_id' => 'required|exists:offres,id',
+            'nom' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'telephone' => 'required|string|max:20',
+            'adresse' => 'nullable|string|max:255',
+            'date_naissance' => 'nullable|date',
+            'formation' => 'nullable|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'competences_techniques' => 'nullable|string|max:255',
+            'competences_linguistiques' => 'nullable|string|max:255',
+            'competences_manageriales' => 'nullable|string|max:255',
+            'certifications' => 'nullable|string|max:255',
+            'autres_informations' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+        ]);
+
+        try {
+            $data = $validated;
+            $data['user_id'] = Auth::id();
+
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('photos', 'public');
+                $data['photo'] = $path;
+                Log::info('Photo uploaded', [
+                    'user_id' => Auth::id(),
+                    'path' => $path,
+                    'timestamp' => now()
+                ]);
+            } else {
+                $data['photo'] = null;
+                Log::warning('No photo uploaded', [
+                    'user_id' => Auth::id(),
+                    'timestamp' => now()
+                ]);
+            }
+
+            $candidature = Candidature::create($data);
+            Log::info('Candidature created', [
+                'candidature_id' => $candidature->id,
+                'user_id' => Auth::id(),
+                'photo' => $candidature->photo,
+                'timestamp' => now()
+            ]);
+
+            return redirect()->route('candidature.success')->with('success', 'Candidature envoyée avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Failed to store candidature', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'timestamp' => now()
+            ]);
+            return redirect()->back()->withErrors(['error' => 'Erreur lors de l\'envoi de la candidature.']);
+        }
+    }
 }

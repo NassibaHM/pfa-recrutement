@@ -61,9 +61,7 @@ Route::middleware(['auth', 'role:recruteur'])->group(function () {
     Route::resource('criteres', CritereController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     
     Route::get('/offres', [OffreController::class, 'index'])->name('offres.index');
-    Route::get('/offres/create', [OffreController::class, 'create'])->name('offres.create');
-    Route::post('/offres', [OffreController::class, 'store'])->name('offres.store');
-
+    Route::get('/offres/{id}', [OffreController::class, 'show'])->name('offres.show');
     Route::get('/offres/{id}/candidatures', [CandidatureController::class, 'afficherCandidatures'])->name('offres.candidatures');
 
     Route::get('/candidats', [CandidatController::class, 'indexRecruteur'])->name('candidats.index');
@@ -71,6 +69,7 @@ Route::middleware(['auth', 'role:recruteur'])->group(function () {
     Route::post('/candidats/{candidatureId}/update', [CandidatController::class, 'updateStatus'])->name('candidats.updateStatus');
     Route::post('/candidats/send-response', [CandidatController::class, 'sendResponse'])->name('candidats.sendResponse');
     Route::post('/candidats/notification/{id}/delete', [CandidatController::class, 'deleteNotification'])->name('candidats.deleteNotification');
+    Route::get('/candidats/details/{candidatureId}', [CandidatController::class, 'showDetails'])->name('candidats.details');
 
     Route::get('/notifications/{id}/mark-as-read', [CandidatController::class, 'markAsRead'])->name('notifications.markAsRead');
 });
@@ -83,15 +82,12 @@ Route::middleware(['auth', 'role:candidat'])->group(function () {
     Route::get('/candidat/offres', [OffreCandidatController::class, 'index'])->name('candidat.offres');
     Route::get('/candidat/offres/{id}', [OffreCandidatController::class, 'show'])->name('candidat.offres.show');
 
-    // Gestion des critères pour candidats
-    Route::get('/candidats/offres', [CritereController::class, 'index'])->name('candidats.offres.index');
-    Route::get('/candidats/offres/{id}', [CritereController::class, 'show'])->name('candidats.offres.show');
-
     // Gestion des candidatures
-    Route::get('/candidature/create/{offreId}', [CandidatureController::class, 'create'])->name('candidature.create');
-    Route::post('/candidatures', [CandidatureController::class, 'store'])->name('candidature.store');
+    Route::get('/candidature/create/{offreId}', [CandidatureController::class, 'create'])
+        ->middleware('restrict.applications')->name('candidature.create');
+    Route::post('/candidatures', [CandidatureController::class, 'store'])
+        ->middleware('restrict.applications')->name('candidature.store');
     Route::get('/candidature/success', [CandidatureController::class, 'success'])->name('candidature.success');
-    Route::get('/candidature/{id}', [CandidatureController::class, 'voirDetails'])->name('candidature.show');
     Route::get('/candidatures/{id}/details', [CandidatureController::class, 'voirDetails'])->name('candidature.voirDetails');
 
     // Suivi des candidatures
@@ -103,5 +99,6 @@ Route::middleware(['auth', 'role:candidat'])->group(function () {
     Route::post('/candidats/notifications/mark-as-read/{id}', [CandidatController::class, 'markAsRead'])->name('candidats.markAsRead');
 });
 
-// Détail public d'une candidature
-Route::get('/candidature/{id}', [CandidatureController::class, 'voirDetails'])->name('candidature.details');
+// Détail public d'une candidature (restreint aux utilisateurs authentifiés)
+Route::get('/candidature/{id}', [CandidatureController::class, 'voirDetails'])
+    ->middleware(['auth'])->name('candidature.details');

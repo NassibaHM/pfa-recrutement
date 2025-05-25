@@ -9,8 +9,11 @@
             <h2 class="text-xl font-semibold mb-2 text-indigo-700">{{ $offre->profile }}</h2>
             <p class="text-gray-700 mb-3">{{ Str::limit($offre->description, 150) }}</p>
             <a href="{{ route('candidat.offres.show', $offre->id) }}" class="text-blue-500 hover:underline mr-4">Voir les détails</a>
-            <a href="{{ route('candidature.create', $offre->id) }}" class="text-green-600 hover:underline">Postuler</a>
-
+            @if (Auth::check() && in_array($offre->id, $appliedOffreIds))
+                <span class="text-gray-500 cursor-not-allowed">Déjà postulé</span>
+            @else
+                <a href="{{ route('candidature.create', $offre->id) }}" class="text-green-600 hover:underline">Postuler</a>
+            @endif
         </div>
     @empty
         <p class="text-gray-600">Aucune offre disponible pour le moment.</p>

@@ -97,8 +97,9 @@
                                             </select>
                                             <input type="checkbox" name="retained_{{ $candidature->id }}_test_technique" {{ $testTechniqueStatus && $testTechniqueStatus->retained ? 'checked' : '' }} onchange="updateStatusAndShowModal({{ $candidature->id }}, document.querySelector('select[name=\"status_{{ $candidature->id }}_test_technique\"]').value, 'test_technique', '{{ route('candidats.updateStatus', $candidature->id) }}', this.checked)" {{ $disableTestTechnique ? 'disabled' : '' }}>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                        <td class="px-6 py-4 whitespace-nowrap flex space-x-2">
                                             <button type="button" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onclick="submitStatusUpdate({{ $candidature->id }})">Envoyer</button>
+                                            <button type="button" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" onclick="viewCandidateDetails({{ $candidature->id }})">Voir détails</button>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap relative">
                                             <button onclick="toggleNotifications('notifications-{{ $candidature->id }}')" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -157,6 +158,19 @@
                     <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Envoyer</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal for Candidate Details -->
+    <div id="candidateDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-1/2">
+            <h3 class="text-lg font-semibold mb-4">Détails du Candidat</h3>
+            <div id="candidateDetailsContent" class="space-y-4">
+                <!-- Candidate details will be loaded here via AJAX -->
+            </div>
+            <div class="flex justify-end mt-4">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600" onclick="closeCandidateDetailsModal()">Fermer</button>
+            </div>
         </div>
     </div>
 
@@ -287,6 +301,73 @@
                 console.error('Error deleting notification:', error);
                 alert('Erreur lors de la suppression de la notification: ' + error.message);
             });
+        }
+
+        function viewCandidateDetails(candidatureId) {
+            const url = '{{ route("candidats.details", ":id") }}'.replace(':id', candidatureId);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                alert('Erreur: Jeton CSRF manquant.');
+                return;
+            }
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const photoUrl = data.candidature.photo ? '{{ url('') }}/storage/' + data.candidature.photo : null;
+                    const content = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div>
+                                    <strong>Photo:</strong><br>
+                                    ${photoUrl ? `<img src="${photoUrl}" alt="Photo du candidat" class="w-24 h-24 rounded-full object-cover" onerror="this.parentElement.innerHTML='<span>Aucune photo disponible</span>'">` : '<span>Aucune photo disponible</span>'}
+                                </div>
+                                <div>
+                                    <strong>Nom complet:</strong> ${data.candidature.nom || 'Non spécifié'}
+                                </div>
+                            </div>
+                            <div><strong>Email:</strong> ${data.candidature.email || 'Non spécifié'}</div>
+                            <div><strong>Téléphone:</strong> ${data.candidature.telephone || 'Non spécifié'}</div>
+                            <div><strong>Adresse:</strong> ${data.candidature.adresse || 'Non spécifié'}</div>
+                            <div><strong>Date de naissance:</strong> ${data.candidature.date_naissance || 'Non spécifié'}</div>
+                            <div><strong>Formation:</strong> ${data.candidature.formation || 'Non spécifié'}</div>
+                            <div><strong>Expérience:</strong> ${data.candidature.experience || 'Non spécifié'}</div>
+                            <div><strong>Compétences Techniques:</strong> ${data.candidature.competences_techniques || 'Non spécifié'}</div>
+                            <div><strong>Compétences Linguistiques:</strong> ${data.candidature.competences_linguistiques || 'Non spécifié'}</div>
+                            <div><strong>Compétences Managériales:</strong> ${data.candidature.competences_manageriales || 'Non spécifié'}</div>
+                            <div><strong>Certifications:</strong> ${data.candidature.certifications || 'Non spécifié'}</div>
+                            <div class="md:col-span-2"><strong>Autres informations:</strong> ${data.candidature.autres_informations || 'Non spécifié'}</div>
+                        </div>
+                    `;
+                    document.getElementById('candidateDetailsContent').innerHTML = content;
+                    document.getElementById('candidateDetailsModal').classList.remove('hidden');
+                } else {
+                    alert('Erreur lors de la récupération des détails: ' + (data.message || ''));
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching candidate details:', error);
+                alert('Erreur lors de la récupération des détails: ' + error.message);
+            });
+        }
+
+        function closeCandidateDetailsModal() {
+            document.getElementById('candidateDetailsModal').classList.add('hidden');
+            document.getElementById('candidateDetailsContent').innerHTML = '';
         }
 
         document.getElementById('responseForm').addEventListener('submit', function(e) {

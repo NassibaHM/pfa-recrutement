@@ -8,7 +8,6 @@
         <p class="text-gray-700 mb-4">{{ $offre->description }}</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Sections des compétences -->
             <div class="bg-blue-50 p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-2">📌 Compétences Techniques</h2>
                 <p class="text-gray-700">{{ $offre->competences_techniques }}</p>
@@ -47,21 +46,20 @@
             </div>
         </div>
 
-        <!-- Boutons en bas -->
         <div class="flex justify-between mt-8">
-            <!-- Bouton retour -->
             <a href="{{ route('candidat.offres') }}" 
                class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition">
                 ← Retour
             </a>
-
-            <!-- Bouton postuler -->
-            <a href="{{ route('candidature.create', $offre->id) }}" 
-               class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition">
-                Postuler
-            </a>
+            @if (Auth::check() && $hasApplied)
+                <span class="bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed">Déjà postulé</span>
+            @else
+                <a href="{{ route('candidature.create', $offre->id) }}" 
+                   class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition">
+                    Postuler
+                </a>
+            @endif
         </div>
-
     </div>
 </div>
 @endsection

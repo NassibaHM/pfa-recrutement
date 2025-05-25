@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
-            'candidat' => \App\Http\Middleware\CandidatMiddleware::class, // Ajout de CandidatMiddleware
+            'candidat' => \App\Http\Middleware\CandidatMiddleware::class,
+            'restrict.applications' => \App\Http\Middleware\RestrictMultipleApplications::class, // Added
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

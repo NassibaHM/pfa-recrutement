@@ -1,12 +1,13 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Candidature;
+use App\Models\Offre;
 use App\Models\Critere;
+use App\Models\Candidature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class CandidatureController extends Controller
 {
@@ -19,7 +20,7 @@ class CandidatureController extends Controller
 
     public function create($id)
     {
-        $offre = Critere::findOrFail($id);
+        $offre = Offre::findOrFail($id);
         $hasApplied = Auth::check() && Candidature::where('user_id', Auth::id())
             ->where('offre_id', $offre->id)
             ->exists();
@@ -36,19 +37,19 @@ class CandidatureController extends Controller
         try {
             $validated = $request->validate([
                 'nom' => 'required|string|max:255',
-                'email' => 'required|email',
+                'email' => 'required|email|max:255',
                 'telephone' => 'required|string|max:20',
                 'adresse' => 'nullable|string',
                 'date_naissance' => 'nullable|date',
-                'formation' => 'nullable|string',
-                'experience' => 'nullable|string',
-                'competences_techniques' => 'nullable|string',
-                'competences_linguistiques' => 'nullable|string',
+                'formation' => 'required|string',
+                'experience' => 'required|numeric|min:0',
+                'competences_techniques' => 'required|string',
+                'competences_linguistiques' => 'required|string',
                 'competences_manageriales' => 'nullable|string',
                 'certifications' => 'nullable|string',
                 'autres_informations' => 'nullable|string',
-                'offre_id' => 'required|exists:criteres,id',
-                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+                'offre_id' => 'required|exists:offres,id',
+                'photo' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             ]);
 
             $hasApplied = Candidature::where('user_id', Auth::id())
@@ -60,11 +61,15 @@ class CandidatureController extends Controller
             }
 
             $photoPath = null;
-            if ($request->hasFile('photo')) {
+            if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
                 $photoPath = $request->file('photo')->store('photos', 'public');
+                if (!$photoPath) {
+                    Log::error('Failed to store photo', ['user_id' => Auth::id()]);
+                    return redirect()->back()->with('error', 'Erreur lors de l\'enregistrement de la photo.');
+                }
             }
 
-            Candidature::create([
+            $candidature = Candidature::create([
                 'user_id' => Auth::id(),
                 'offre_id' => $validated['offre_id'],
                 'nom' => $validated['nom'],
@@ -80,18 +85,20 @@ class CandidatureController extends Controller
                 'certifications' => $validated['certifications'],
                 'autres_informations' => $validated['autres_informations'],
                 'photo' => $photoPath,
+                'resume_path' => null,
                 'etat' => 'en attente',
             ]);
 
-            Log::info('Candidature created successfully, redirecting to success page.', [
+            Log::info('Candidature created successfully.', [
                 'offre_id' => $validated['offre_id'],
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'candidature_id' => $candidature->id,
             ]);
 
             return redirect()->route('candidature.success')->with('success', 'Candidature envoyée avec succès !');
         } catch (\Exception $e) {
-            Log::error('Error in CandidatureController@store: ' . $e->getMessage());
-            return back()->with('error', 'Une erreur est survenue : ' . $e->getMessage());
+            Log::error('Error in CandidatureController@store: ' . $e->getMessage(), ['user_id' => Auth::id()]);
+            return redirect()->back()->with('error', 'Une erreur est survenue : ' . $e->getMessage());
         }
     }
 
@@ -127,64 +134,71 @@ class CandidatureController extends Controller
         return view('offres.candidatures', compact('offre', 'candidatures'));
     }
 
-    public function postuler(Request $request, $offre_id)
+    public function apply(Request $request, Offre $offre)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Veuillez vous connecter avant de postuler.');
-        }
-
-        $offre = Critere::findOrFail($offre_id);
-
-        $validated = $request->validate([
-            'competences_techniques' => 'required|numeric',
-            'competences_linguistiques' => 'required|numeric',
-            'competences_manageriales' => 'required|numeric',
-            'experience' => 'required|numeric',
-            'nom' => 'required|string',
-            'email' => 'required|email',
-            'telephone' => 'required|string',
-            'adresse' => 'required|string',
-            'date_naissance' => 'required|date',
+        $request->validate([
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
             'formation' => 'required|string',
+            'experience' => 'required|numeric|min:0',
+            'competences_techniques' => 'required|string',
+            'competences_linguistiques' => 'required|string',
+            'competences_manageriales' => 'nullable|string',
             'certifications' => 'nullable|string',
-            'autres_informations' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
-        $exist = Candidature::where('offre_id', $offre_id)
-            ->where('user_id', Auth::id())->first();
-        if ($exist) {
-            return back()->with('error', 'Vous avez déjà postulé à cette offre.');
+        try {
+            $photoPath = null;
+            if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+                $photoPath = $request->file('photo')->store('photos', 'public');
+            }
+
+            Candidature::create([
+                'offre_id' => $offre->id,
+                'nom' => $request->nom,
+                'prenom' => $request->prenom,
+                'email' => $request->email,
+                'formation' => $request->formation,
+                'experience' => $request->experience,
+                'competences_techniques' => $request->competences_techniques,
+                'competences_linguistiques' => $request->competences_linguistiques,
+                'competences_manageriales' => $request->competences_manageriales,
+                'certifications' => $request->certifications,
+                'photo' => $photoPath,
+                'resume_path' => null,
+                'user_id' => Auth::id(),
+                'etat' => 'en attente',
+            ]);
+
+            return redirect()->route('candidature.success')->with('success', 'Candidature soumise avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Error in CandidatureController@apply: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erreur lors de la candidature : ' . $e->getMessage());
         }
-
-        $candidature = new Candidature();
-        $candidature->fill($validated);
-        $candidature->offre_id = $offre_id;
-        $candidature->user_id = Auth::id();
-        $candidature->etat = 'en attente';
-        $candidature->score = $this->calculerScore($candidature, $offre);
-
-        $candidature->save();
-
-        return redirect()->route('candidat.offres')->with('success', 'Candidature envoyée avec succès !');
     }
 
-    private function calculerScore($candidature, $offre)
+    public function listCriteres()
     {
-        $critere = $offre; // Critere is the offer itself
-        if (!$critere) return 0;
-
-        $score = 0;
-        $score += $this->calculerCritereScore($candidature->competences_techniques, $critere->poids_competence_technique);
-        $score += $this->calculerCritereScore($candidature->competences_linguistiques, $critere->poids_competence_linguistique);
-        $score += $this->calculerCritereScore($candidature->competences_manageriales, $critere->poids_competence_manageriale);
-        $score += $this->calculerCritereScore($candidature->experience, $critere->poids_experience);
-        $score += $this->calculerCritereScore($candidature->formation, $critere->poids_formation);
-
-        return $score;
+        $criteres = Critere::all();
+        return view('recruteur.criteres', compact('criteres'));
     }
 
-    private function calculerCritereScore($valeurCandidat, $poidsCritere)
+    public function listCandidatures(Offre $offre)
     {
-        return is_numeric($valeurCandidat) ? (int)$valeurCandidat * (int)$poidsCritere : 0;
+        $candidatures = Candidature::where('offre_id', $offre->id)->get();
+        return view('recruteur.candidatures', compact('offre', 'candidatures'));
+    }
+
+    public function listCandidats(Request $request, $offre_id = null)
+    {
+        $offres = Offre::all();
+        $criteres = Critere::all();
+        $candidatures = $offre_id
+            ? Candidature::where('offre_id', $offre_id)->with('user')->get()
+            : Candidature::with('user')->get();
+        $offreId = $offre_id;
+        return view('candidats.index-recruteur', compact('offres', 'candidatures', 'criteres', 'offreId'));
     }
 }

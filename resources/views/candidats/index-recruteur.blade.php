@@ -12,16 +12,9 @@
         <aside class="w-64 bg-white shadow-md p-5">
             <h3 class="text-xl font-semibold text-gray-700">Navigation</h3>
             <ul class="mt-4 space-y-2">
-                <li>
-                    <a href="{{ route('dashboard') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">🏠 Accueil</a>
-                </li>
-                <li>
-                    <a href="{{ route('criteres.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">💼 Offres</a>
-                </li>
-                <li>
-                    <a href="{{ route('candidats.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">👤 Candidats</a>
-                </li>
-                <li>
+                <li><a href="{{ route('dashboard') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">🏠 Accueil</a></li>
+                <li><a href="{{ route('criteres.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">💼 Offres</a></li>
+                <li><a href="{{ route('candidats.list') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">👤 Candidats</a></li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="block p-3 w-full text-left rounded-lg text-red-600 hover:bg-gray-200">🚪 Déconnexion</button>
@@ -39,10 +32,29 @@
                     <select name="offre_id" id="offre_id" onchange="window.location.href='{{ url('/candidats') }}/' + this.value" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                         <option value="">Toutes les offres</option>
                         @foreach ($offres as $offre)
-                            <option value="{{ $offre->id }}" {{ $offreId == $offre->id ? 'selected' : '' }}>{{ $offre->profile }}</option>
+                            <option value="{{ $offre->id }}" {{ isset($offreId) && $offreId == $offre->id ? 'selected' : '' }}>{{ $offre->profile }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                <!-- Rank Button -->
+                @if (isset($offreId))
+                    @php
+                        $critere = $criteres->firstWhere('offre_id', $offreId);
+                    @endphp
+                    @if ($critere && !$candidatures->isEmpty())
+                        <div class="mb-4">
+                            <form method="POST" action="{{ route('critere.rank', ['critereId' => $critere->id]) }}">
+                                @csrf
+                                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Classer Candidats</button>
+                            </form>
+                        </div>
+                    @elseif ($critere && $candidatures->isEmpty())
+                        <p class="text-gray-600 mb-4">Aucune candidature pour cette offre.</p>
+                    @else
+                        <p class="text-red-600 mb-4">Aucun critère défini pour cette offre. <a href="{{ route('criteres.create') }}" class="underline">Ajouter un critère</a>.</p>
+                    @endif
+                @endif
 
                 <!-- Candidates List -->
                 @if ($candidatures->isEmpty())
@@ -54,6 +66,8 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rang</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sélection</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entretien RH</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Technique</th>
@@ -73,6 +87,8 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->user->name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->user->email }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->score ? number_format($candidature->score, 2) : 'Non classé' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->rank ?? 'Non classé' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <select name="status_{{ $candidature->id }}_selection" onchange="updateStatusAndShowModal({{ $candidature->id }}, this.value, 'selection', '{{ route('candidats.updateStatus', $candidature->id) }}', this.value === 'retenu')" class="border p-2 rounded">
                                                 <option value="en attente" {{ !$selectionStatus ? 'selected' : '' }}>En attente</option>
@@ -104,22 +120,26 @@
                                         <td class="px-6 py-4 whitespace-nowrap relative">
                                             <button onclick="toggleNotifications('notifications-{{ $candidature->id }}')" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                 <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
-                                                {{ $candidature->unread_notifications_count }}
+                                                {{ $candidature->unread_notifications_count ?? 0 }}
                                             </button>
                                             <div id="notifications-{{ $candidature->id }}" class="hidden absolute z-10 mt-2 w-96 bg-white shadow-lg rounded-lg p-4">
-                                                @foreach (['selection', 'entretien_rh', 'test_technique'] as $phase)
-                                                    @if ($candidature->notifications_by_phase[$phase]->isNotEmpty())
-                                                        <h4 class="text-sm font-semibold mt-2">{{ ucfirst(str_replace('_', ' ', $phase)) }}</h4>
-                                                        @foreach ($candidature->notifications_by_phase[$phase] as $notification)
-                                                            <div id="notification-{{ $notification->id }}" class="border-b py-2 {{ $notification->read ? 'text-gray-500' : 'text-gray-900 font-semibold' }}">
-                                                                <p>{{ $notification->message }}</p>
-                                                                <p class="text-xs text-gray-400">{{ $notification->created_at->format('d/m/Y H:i') }}</p>
-                                                                <button onclick="deleteNotification({{ $notification->id }}, {{ $candidature->id }})" class="text-red-500 text-xs hover:underline">Supprimer</button>
-                                                            </div>
-                                                        @endforeach
+                                                @if (isset($candidature->notifications_by_phase) && is_array($candidature->notifications_by_phase))
+                                                    @foreach (['selection', 'entretien_rh', 'test_technique'] as $phase)
+                                                        @if (!empty($candidature->notifications_by_phase[$phase]) && $candidature->notifications_by_phase[$phase]->isNotEmpty())
+                                                            <h4 class="text-sm font-semibold mt-2">{{ ucfirst(str_replace('_', ' ', $phase)) }}</h4>
+                                                            @foreach ($candidature->notifications_by_phase[$phase] as $notification)
+                                                                <div id="notification-{{ $notification->id }}" class="border-b py-2 {{ $notification->read ? 'text-gray-500' : 'text-gray-800' }}">
+                                                                    <p>{{ $notification->message }}</p>
+                                                                    <p class="text-xs text-gray-400">{{ $notification->created_at->format('d/m/Y H:i') }}</p>
+                                                                    <button onclick="deleteNotification({{ $notification->id }}, {{ $candidature->id }})" class="text-red-500 text-xs hover:underline">Supprimer</button>
+                                                                </div>
+                                                            @endforeach
+                                                        @endif
+                                                    @endforeach
+                                                    @if ($candidature->notifications_by_phase['selection']->isEmpty() && $candidature->notifications_by_phase['entretien_rh']->isEmpty() && $candidature->notifications_by_phase['test_technique']->isEmpty())
+                                                        <p class="text-gray-600">Aucune notification.</p>
                                                     @endif
-                                                @endforeach
-                                                @if ($candidature->notifications_by_phase['selection']->isEmpty() && $candidature->notifications_by_phase['entretien_rh']->isEmpty() && $candidature->notifications_by_phase['test_technique']->isEmpty())
+                                                @else
                                                     <p class="text-gray-600">Aucune notification.</p>
                                                 @endif
                                             </div>
@@ -246,86 +266,45 @@
             if (!confirm('Voulez-vous vraiment supprimer cette notification ?')) {
                 return;
             }
-
             const url = '{{ route("candidats.deleteNotification", ":id") }}'.replace(':id', notificationId);
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-            if (!csrfToken) {
-                console.error('CSRF token not found');
-                alert('Erreur: Jeton CSRF manquant.');
-                return;
-            }
-
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Remove the notification from the UI
-                    const notificationElement = document.getElementById(`notification-${notificationId}`);
-                    if (notificationElement) {
-                        notificationElement.remove();
-                    }
-
-                    // Update unread count
+                    document.getElementById(`notification-${notificationId}`).remove();
                     const unreadCountButton = document.querySelector(`button[onclick="toggleNotifications('notifications-${candidatureId}')"]`);
-                    if (unreadCountButton) {
-                        const currentCount = parseInt(unreadCountButton.textContent.match(/\d+/)?.[0] || '0');
-                        if (currentCount > 0) {
-                            unreadCountButton.textContent = unreadCountButton.textContent.replace(/\d+/, currentCount - 1);
-                        }
+                    const currentCount = parseInt(unreadCountButton.textContent.match(/\d+/)?.[0] || '0');
+                    if (currentCount > 0) {
+                        unreadCountButton.textContent = unreadCountButton.textContent.replace(/\d+/, currentCount - 1);
                     }
-
-                    // Hide dropdown if no notifications remain
                     const dropdown = document.getElementById(`notifications-${candidatureId}`);
                     if (dropdown && dropdown.querySelectorAll('.border-b').length === 0) {
                         dropdown.innerHTML = '<p class="text-gray-600">Aucune notification.</p>';
                     }
-
                     alert(data.message);
                 } else {
-                    throw new Error(data.message || 'Erreur inconnue');
+                    alert('Erreur: ' + (data.message || ''));
                 }
             })
-            .catch(error => {
-                console.error('Error deleting notification:', error);
-                alert('Erreur lors de la suppression de la notification: ' + error.message);
-            });
+            .catch(error => console.error('Error:', error));
         }
 
         function viewCandidateDetails(candidatureId) {
             const url = '{{ route("candidats.details", ":id") }}'.replace(':id', candidatureId);
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-            if (!csrfToken) {
-                console.error('CSRF token not found');
-                alert('Erreur: Jeton CSRF manquant.');
-                return;
-            }
-
             fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     const photoUrl = data.candidature.photo ? '{{ url('') }}/storage/' + data.candidature.photo : null;
@@ -356,13 +335,10 @@
                     document.getElementById('candidateDetailsContent').innerHTML = content;
                     document.getElementById('candidateDetailsModal').classList.remove('hidden');
                 } else {
-                    alert('Erreur lors de la récupération des détails: ' + (data.message || ''));
+                    alert('Erreur: ' + (data.message || ''));
                 }
             })
-            .catch(error => {
-                console.error('Error fetching candidate details:', error);
-                alert('Erreur lors de la récupération des détails: ' + error.message);
-            });
+            .catch(error => console.error('Error:', error));
         }
 
         function closeCandidateDetailsModal() {

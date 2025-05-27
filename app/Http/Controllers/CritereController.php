@@ -227,4 +227,5 @@ class CritereController extends Controller
 
         return view('criteres.show', ['criteres' => $critere]);
     }
+    
 }

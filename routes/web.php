@@ -10,7 +10,8 @@ use App\Http\Controllers\{
     OffreController,
     CandidatureController,
     CandidatController,
-    OffreCandidatController
+    OffreCandidatController,
+    ResumeAnalyzerController
 };
 
 // Page d'accueil
@@ -32,7 +33,8 @@ Route::get('/force-logout', function () {
 // Tableau de bord (redirige selon le rôle)
 Route::get('/dashboard', function () {
     if (Auth::user()->role === 'recruteur') {
-        return view('dashboard');
+        $criteres = \App\Models\Critere::orderBy('id', 'desc')->paginate(5);
+        return view('dashboard', compact('criteres'));
     } elseif (Auth::user()->role === 'candidat') {
         return redirect()->route('candidat.welcome');
     }
@@ -58,20 +60,28 @@ Route::get('/check-database', function () {
 
 // === Recruteur ===
 Route::middleware(['auth', 'role:recruteur'])->group(function () {
-    Route::resource('criteres', CritereController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
-    
     Route::get('/offres', [OffreController::class, 'index'])->name('offres.index');
     Route::get('/offres/{id}', [OffreController::class, 'show'])->name('offres.show');
     Route::get('/offres/{id}/candidatures', [CandidatureController::class, 'afficherCandidatures'])->name('offres.candidatures');
-
-    Route::get('/candidats', [CandidatController::class, 'indexRecruteur'])->name('candidats.index');
-    Route::get('/candidats/{offreId}', [CandidatController::class, 'indexRecruteur'])->name('candidats.indexByOffre');
+    Route::get('/candidats/{offre_id?}', [CandidatureController::class, 'listCandidats'])->name('candidats.list');
     Route::post('/candidats/{candidatureId}/update', [CandidatController::class, 'updateStatus'])->name('candidats.updateStatus');
     Route::post('/candidats/send-response', [CandidatController::class, 'sendResponse'])->name('candidats.sendResponse');
     Route::post('/candidats/notification/{id}/delete', [CandidatController::class, 'deleteNotification'])->name('candidats.deleteNotification');
     Route::get('/candidats/details/{candidatureId}', [CandidatController::class, 'showDetails'])->name('candidats.details');
-
     Route::get('/notifications/{id}/mark-as-read', [CandidatController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/candidature/{candidatureId}/analyze', [ResumeAnalyzerController::class, 'analyze'])->name('candidature.analyze');
+    Route::post('/critere/{critereId}/rank', [ResumeAnalyzerController::class, 'rank'])->name('critere.rank');
+    
+    // Critere Routes
+    Route::get('/criteres', [CritereController::class, 'index'])->name('criteres.index');
+    Route::get('/criteres/create', [CritereController::class, 'create'])->name('criteres.create');
+    Route::post('/criteres', [CritereController::class, 'store'])->name('criteres.store');
+    Route::get('/criteres/{id}/edit', [CritereController::class, 'edit'])->name('criteres.edit');
+    Route::put('/criteres/{id}', [CritereController::class, 'update'])->name('criteres.update');
+    Route::delete('/criteres/{id}', [CritereController::class, 'destroy'])->name('criteres.destroy');
+    Route::get('/criteres/{id}', [CritereController::class, 'show'])->name('criteres.show');
+    
+    Route::get('/offres/{offre_id}/candidatures', [CandidatureController::class, 'listCandidatures'])->name('offres.candidatures');
 });
 
 // === Candidat ===

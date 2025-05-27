@@ -2,9 +2,9 @@
 
 @section('content')
     <x-slot name="header">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-800">Tableau de Bord</h2>
-    </div>
+        <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-gray-800">Tableau de Bord</h2>
+        </div>
     </x-slot>
 
     <div class="flex h-screen bg-gray-100">
@@ -19,7 +19,7 @@
                     <a href="{{ route('criteres.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">💼 Offres</a>
                 </li>
                 <li>
-                    <a href="{{ route('candidats.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">👤 Candidats</a>
+                    <a href="{{ route('candidats.list') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">👤 Candidats</a>
                 </li>
                 <li>
                     <form method="POST" action="{{ route('logout') }}">

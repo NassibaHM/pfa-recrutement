@@ -1,0 +1,21 @@
+{
+  "name": "pfa-recrutement-api",
+  "version": "1.0.0",
+  "description": "AI-powered resume analysis API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "body-parser": "^2.2.0",
+    "express": "^4.21.2",
+    "multer": "^2.0.0-rc.4",
+    "natural": "^7.1.0",
+    "pdf2json": "^3.1.6",
+    "pfa-recrutement-api": "file:"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

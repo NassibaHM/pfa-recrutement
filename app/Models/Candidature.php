@@ -12,6 +12,7 @@ class Candidature extends Model
     protected $fillable = [
         'user_id', 
         'offre_id',
+        'resume_path', // Ajouté par la migration
         'competences_techniques',
         'competences_linguistiques',
         'competences_manageriales',
@@ -26,7 +27,10 @@ class Candidature extends Model
         'autres_informations',
         'photo',
         'etat',
-        'score',
+        'score', // Remplacer par 'score_pertinence' si vous ajustez la migration
+        'score_pertinence', // Ajouter si vous utilisez ce champ
+        'rank',
+        'extracted_features',
         'retained'
     ];
 

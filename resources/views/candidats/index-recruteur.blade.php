@@ -15,6 +15,7 @@
                 <li><a href="{{ route('dashboard') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">🏠 Accueil</a></li>
                 <li><a href="{{ route('criteres.index') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">💼 Offres</a></li>
                 <li><a href="{{ route('candidats.list') }}" class="block p-3 rounded-lg text-gray-800 hover:bg-gray-200">👤 Candidats</a></li>
+                <li>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="block p-3 w-full text-left rounded-lg text-red-600 hover:bg-gray-200">🚪 Déconnexion</button>
@@ -72,7 +73,6 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entretien RH</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Test Technique</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notifications</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -87,8 +87,7 @@
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->user->name }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->user->email }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->score ? number_format($candidature->score, 2) : 'Non classé' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->rank ?? 'Non classé' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->score_pertinence ? number_format($candidature->score_pertinence, 2).'%' : 'Non classé' }}</td>                                        <td class="px-6 py-4 whitespace-nowrap">{{ $candidature->rank ?? 'Non classé' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <select name="status_{{ $candidature->id }}_selection" onchange="updateStatusAndShowModal({{ $candidature->id }}, this.value, 'selection', '{{ route('candidats.updateStatus', $candidature->id) }}', this.value === 'retenu')" class="border p-2 rounded">
                                                 <option value="en attente" {{ !$selectionStatus ? 'selected' : '' }}>En attente</option>
@@ -114,35 +113,7 @@
                                             <input type="checkbox" name="retained_{{ $candidature->id }}_test_technique" {{ $testTechniqueStatus && $testTechniqueStatus->retained ? 'checked' : '' }} onchange="updateStatusAndShowModal({{ $candidature->id }}, document.querySelector('select[name=\"status_{{ $candidature->id }}_test_technique\"]').value, 'test_technique', '{{ route('candidats.updateStatus', $candidature->id) }}', this.checked)" {{ $disableTestTechnique ? 'disabled' : '' }}>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap flex space-x-2">
-                                            <button type="button" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600" onclick="submitStatusUpdate({{ $candidature->id }})">Envoyer</button>
                                             <button type="button" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600" onclick="viewCandidateDetails({{ $candidature->id }})">Voir détails</button>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap relative">
-                                            <button onclick="toggleNotifications('notifications-{{ $candidature->id }}')" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
-                                                {{ $candidature->unread_notifications_count ?? 0 }}
-                                            </button>
-                                            <div id="notifications-{{ $candidature->id }}" class="hidden absolute z-10 mt-2 w-96 bg-white shadow-lg rounded-lg p-4">
-                                                @if (isset($candidature->notifications_by_phase) && is_array($candidature->notifications_by_phase))
-                                                    @foreach (['selection', 'entretien_rh', 'test_technique'] as $phase)
-                                                        @if (!empty($candidature->notifications_by_phase[$phase]) && $candidature->notifications_by_phase[$phase]->isNotEmpty())
-                                                            <h4 class="text-sm font-semibold mt-2">{{ ucfirst(str_replace('_', ' ', $phase)) }}</h4>
-                                                            @foreach ($candidature->notifications_by_phase[$phase] as $notification)
-                                                                <div id="notification-{{ $notification->id }}" class="border-b py-2 {{ $notification->read ? 'text-gray-500' : 'text-gray-800' }}">
-                                                                    <p>{{ $notification->message }}</p>
-                                                                    <p class="text-xs text-gray-400">{{ $notification->created_at->format('d/m/Y H:i') }}</p>
-                                                                    <button onclick="deleteNotification({{ $notification->id }}, {{ $candidature->id }})" class="text-red-500 text-xs hover:underline">Supprimer</button>
-                                                                </div>
-                                                            @endforeach
-                                                        @endif
-                                                    @endforeach
-                                                    @if ($candidature->notifications_by_phase['selection']->isEmpty() && $candidature->notifications_by_phase['entretien_rh']->isEmpty() && $candidature->notifications_by_phase['test_technique']->isEmpty())
-                                                        <p class="text-gray-600">Aucune notification.</p>
-                                                    @endif
-                                                @else
-                                                    <p class="text-gray-600">Aucune notification.</p>
-                                                @endif
-                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -157,28 +128,6 @@
                 </div>
             </div>
         </main>
-    </div>
-
-    <!-- Modal for Sending Response -->
-    <div id="responseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
-            <h3 class="text-lg font-semibold mb-4">Envoyer une Réponse</h3>
-            <form id="responseForm" method="POST" action="">
-                @csrf
-                <input type="hidden" id="candidatureId" name="candidatureId">
-                <input type="hidden" id="phase" name="phase">
-                <div class="mb-4">
-                    <label for="responseMessage" class="block text-sm font-medium text-gray-700">Message :</label>
-                    <textarea id="responseMessage" name="responseMessage" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required></textarea>
-                    <p id="autoMessage" class="mt-2 text-gray-600 italic"></p>
-                </div>
-                <div class="flex justify-end">
-                    <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded mr-2 hover:bg-gray-600" onclick="closeResponseModal()">Annuler</button>
-                    <button type="button" id="modifyButton" class="bg-yellow-500 text-white px-4 py-2 rounded mr-2 hover:bg-yellow-600" onclick="modifyMessage()">Modifier</button>
-                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Envoyer</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- Modal for Candidate Details -->
@@ -197,7 +146,6 @@
     <script>
         let currentCandidatureId = null;
         let currentPhase = null;
-        let autoMessage = '';
 
         function updateStatusAndShowModal(candidatureId, status, phase, url, retained) {
             currentCandidatureId = candidatureId;
@@ -217,82 +165,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    autoMessage = data.autoMessage || '';
-                    document.getElementById('autoMessage').textContent = autoMessage;
-                    document.getElementById('responseMessage').value = '';
-                    document.getElementById('phase').value = phase;
-                    openResponseModal(candidatureId);
+                    alert('Statut mis à jour avec succès.');
+                    location.reload(); // Recharge la page pour refléter les changements
                 } else {
                     alert('Erreur lors de la mise à jour: ' + (data.message || ''));
                 }
             })
             .catch(error => console.error('Fetch error:', error));
-        }
-
-        function submitStatusUpdate(candidatureId) {
-            if (currentCandidatureId !== candidatureId || !currentPhase) {
-                alert('Veuillez sélectionner un statut avant d\'envoyer.');
-                return;
-            }
-            openResponseModal(candidatureId);
-        }
-
-        function openResponseModal(candidatureId) {
-            document.getElementById('candidatureId').value = candidatureId;
-            document.getElementById('phase').value = currentPhase;
-            document.getElementById('autoMessage').textContent = autoMessage;
-            document.getElementById('responseMessage').value = '';
-            document.getElementById('responseModal').classList.remove('hidden');
-        }
-
-        function closeResponseModal() {
-            document.getElementById('responseModal').classList.add('hidden');
-            currentCandidatureId = null;
-            currentPhase = null;
-            autoMessage = '';
-        }
-
-        function modifyMessage() {
-            document.getElementById('responseMessage').value = autoMessage;
-            document.getElementById('autoMessage').textContent = '';
-        }
-
-        function toggleNotifications(elementId) {
-            const element = document.getElementById(elementId);
-            element.classList.toggle('hidden');
-        }
-
-        function deleteNotification(notificationId, candidatureId) {
-            if (!confirm('Voulez-vous vraiment supprimer cette notification ?')) {
-                return;
-            }
-            const url = '{{ route("candidats.deleteNotification", ":id") }}'.replace(':id', notificationId);
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById(`notification-${notificationId}`).remove();
-                    const unreadCountButton = document.querySelector(`button[onclick="toggleNotifications('notifications-${candidatureId}')"]`);
-                    const currentCount = parseInt(unreadCountButton.textContent.match(/\d+/)?.[0] || '0');
-                    if (currentCount > 0) {
-                        unreadCountButton.textContent = unreadCountButton.textContent.replace(/\d+/, currentCount - 1);
-                    }
-                    const dropdown = document.getElementById(`notifications-${candidatureId}`);
-                    if (dropdown && dropdown.querySelectorAll('.border-b').length === 0) {
-                        dropdown.innerHTML = '<p class="text-gray-600">Aucune notification.</p>';
-                    }
-                    alert(data.message);
-                } else {
-                    alert('Erreur: ' + (data.message || ''));
-                }
-            })
-            .catch(error => console.error('Error:', error));
         }
 
         function viewCandidateDetails(candidatureId) {
@@ -345,35 +224,5 @@
             document.getElementById('candidateDetailsModal').classList.add('hidden');
             document.getElementById('candidateDetailsContent').innerHTML = '';
         }
-
-        document.getElementById('responseForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const candidatureId = document.getElementById('candidatureId').value;
-            const responseMessage = document.getElementById('responseMessage').value;
-            const phase = document.getElementById('phase').value;
-            fetch('{{ route('candidats.sendResponse') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    candidatureId: candidatureId,
-                    message: responseMessage,
-                    phase: phase
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Réponse envoyée avec succès.');
-                    closeResponseModal();
-                    location.reload();
-                } else {
-                    alert('Erreur lors de l\'envoi de la réponse.');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
     </script>
 @endsection

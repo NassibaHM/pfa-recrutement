@@ -3,12 +3,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Critere;
 use App\Models\Candidature;
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ResumeAnalyzerController extends Controller
 {
+    protected $geminiService;
+
+    public function __construct(GeminiService $geminiService)
+    {
+        $this->geminiService = $geminiService;
+    }
+
     public function rank(Request $request, $critereId)
     {
         try {
@@ -59,60 +66,61 @@ class ResumeAnalyzerController extends Controller
                 'poids_experience' => $critere->poids_experience,
             ];
 
-            $payload = [
-                'candidates' => $candidatesData,
-                'criteria' => $criteria,
-                'critere' => $critere->toArray(),
-            ];
+            // Appeler GeminiService pour obtenir les scores
+            $results = $this->geminiService->rankCandidates($candidatesData, $criteria, $critere->toArray());
 
-            Log::info('Sending request to ranking API', ['payload' => $payload]);
-
-            $response = Http::timeout(30)->post('http://localhost:3000/rank', $payload);
-
-            if ($response->failed()) {
-                Log::error('API ranking failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'headers' => $response->headers(),
-                ]);
-                return redirect()->back()->with('error', 'Erreur lors du classement des candidats : ' . $response->body());
-            }
-
-            $results = $response->json();
-
-            Log::info('API response received', ['results' => $results]);
+            Log::info('Ranking results received from Gemini', ['results' => $results]);
 
             if (!is_array($results) || empty($results)) {
-                Log::error('Invalid or empty API response', ['results' => $results]);
-                return redirect()->back()->with('error', 'Réponse invalide ou vide de l\'API de classement.');
+                Log::error('Invalid or empty ranking results from Gemini', ['results' => $results]);
+                return redirect()->back()->with('error', 'Résultats de classement invalides ou vides.');
             }
 
+            // Mettre à jour les scores et rangs dans la base de données
             foreach ($results as $index => $result) {
                 if (!isset($result['candidature_id'], $result['score'])) {
-                    Log::warning('Invalid result format', ['result' => $result]);
+                    Log::warning('Invalid result format from Gemini', ['result' => $result]);
                     continue;
                 }
+
                 $candidature = Candidature::find($result['candidature_id']);
                 if ($candidature) {
                     $candidature->update([
-                        'score' => $result['score'] ?? null,
+                        'score_pertinence' => $result['score'] * 100, // Utiliser score_pertinence au lieu de score
                         'rank' => $index + 1,
                         'extracted_features' => json_encode($result['features'] ?? []),
                     ]);
-                    Log::info('Updated candidature', [
+                    Log::info('Updated candidature with Gemini score', [
                         'candidature_id' => $candidature->id,
-                        'score' => $result['score'],
+                        'score_pertinence' => $result['score'] * 100,
                         'rank' => $index + 1,
                     ]);
                 }
             }
 
-            return redirect()->back()->with('success', 'Candidats classés avec succès.');
+            // Récupérer les candidatures triées par score_pertinence descendant
+            $sortedCandidatures = Candidature::where('offre_id', $critere->offre_id)
+                ->orderByDesc('score_pertinence')
+                ->get();
+
+            // Récupérer les offres et critères pour la vue
+            $offres = \App\Models\Offre::all();
+            $criteres = \App\Models\Critere::orderBy('id', 'desc')->get();
+
+            // Passer les données triées à la vue
+            return view('candidats.index-recruteur', [
+                'offres' => $offres,
+                'criteres' => $criteres,
+                'candidatures' => $sortedCandidatures,
+                'offreId' => $critere->offre_id,
+            ])->with('success', 'Candidats classés avec succès.');
+
         } catch (\Exception $e) {
             Log::error('Error in ResumeAnalyzerController::rank', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return redirect()->back()->with('error', 'Erreur lors du classement : ' . $e->getMessage());
         }
     }

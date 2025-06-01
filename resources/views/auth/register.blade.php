@@ -5,60 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription - RecruitAI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        'primary': '#1e40af',
+                        'secondary': '#0f172a',
+                        'accent': '#f59e0b'
+                    },
                     animation: {
-                        'float': 'float 6s ease-in-out infinite',
-                        'slide-up': 'slideUp 0.8s ease-out',
-                        'fade-in': 'fadeIn 1s ease-out',
-                        'pulse-slow': 'pulse 3s infinite',
-                        'bounce-slow': 'bounce 2s infinite'
+                        'slide-in-left': 'slideInLeft 1s ease-out',
+                        'slide-in-right': 'slideInRight 1s ease-out',
+                        'fade-in-up': 'fadeInUp 0.8s ease-out',
+                        'float-slow': 'floatSlow 8s ease-in-out infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite alternate',
+                        'spin-slow': 'spin 3s linear infinite'
                     }
                 }
             }
         }
     </script>
     <style>
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(50px); }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
         }
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+            100% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.6); }
         }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .glass-morphism {
+            backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(209, 213, 219, 0.3);
         }
-        .hero-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .hero-pattern {
+            background-image: radial-gradient(circle at 25px 25px, rgba(255,255,255,0.1) 2px, transparent 0),
+                              radial-gradient(circle at 75px 75px, rgba(255,255,255,0.1) 2px, transparent 0);
+            background-size: 100px 100px;
         }
-        .input-focus {
-            transition: all 0.3s ease;
-        }
-        .input-focus:focus {
+        .input-glow:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 20px rgba(59, 130, 246, 0.15);
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .gradient-border {
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #3b82f6, #8b5cf6) border-box;
+            border: 2px solid transparent;
         }
         .strength-meter {
             height: 4px;
-            border-radius: 2px;
             background: #e5e7eb;
+            border-radius: 2px;
             overflow: hidden;
             margin-top: 8px;
         }
@@ -67,31 +79,50 @@
             transition: all 0.3s ease;
             border-radius: 2px;
         }
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            animation: floatSlow 8s ease-in-out infinite;
+        }
+        .register-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
-<body class="hero-bg min-h-screen flex items-center justify-center relative overflow-hidden py-8">
-    <!-- Animated Background Elements -->
-    <div class="absolute inset-0">
-        <div class="absolute top-20 left-10 w-20 h-20 bg-white opacity-10 rounded-full animate-float"></div>
-        <div class="absolute top-40 right-20 w-16 h-16 bg-white opacity-10 rounded-full animate-float" style="animation-delay: 2s;"></div>
-        <div class="absolute bottom-20 left-20 w-12 h-12 bg-white opacity-10 rounded-full animate-float" style="animation-delay: 4s;"></div>
-        <div class="absolute bottom-40 right-10 w-24 h-24 bg-white opacity-10 rounded-full animate-float" style="animation-delay: 1s;"></div>
-        <div class="absolute top-1/2 left-1/4 w-32 h-32 bg-yellow-300 opacity-5 rounded-full animate-pulse-slow"></div>
-        <div class="absolute top-1/3 right-1/3 w-20 h-20 bg-yellow-300 opacity-5 rounded-full animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="hero-pattern absolute inset-0"></div>
+    
+    <!-- Background Image -->
+    <div class="absolute inset-0 opacity-20">
+        <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+             alt="Professional team" class="w-full h-full object-cover">
     </div>
 
+    <!-- Floating Orbs -->
+    <div class="floating-orb w-72 h-72 top-10 -left-20" style="animation-delay: 0s;"></div>
+    <div class="floating-orb w-96 h-96 -top-20 right-10" style="animation-delay: 2s;"></div>
+    <div class="floating-orb w-64 h-64 bottom-10 -right-10" style="animation-delay: 4s;"></div>
+    <div class="floating-orb w-80 h-80 -bottom-20 left-1/4" style="animation-delay: 1s;"></div>
+
     <!-- Navigation -->
-    <nav class="fixed top-0 w-full z-50 glass-effect">
+    <nav class="fixed w-full top-0 z-50 glass-morphism shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <a href="/" class="flex-shrink-0">
-                        <span class="text-2xl font-bold gradient-text">RecruitAI</span>
+                    <a href="/" class="flex items-center">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-users text-white text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-900">RecruitAI</span>
                     </a>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-gray-700 text-sm">Déjà un compte ?</span>
-                    <a href="/login" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full text-sm font-semibold transition-all transform hover:scale-105 shadow-lg">
+                    <span class="text-gray-600 text-sm">Déjà un compte ?</span>
+                    <a href="/login" class="bg-primary hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg">
                         Se connecter
                     </a>
                 </div>
@@ -99,226 +130,250 @@
         </div>
     </nav>
 
-    <!-- Register Form Container -->
-    <div class="w-full max-w-lg mx-auto px-4 relative z-10 animate-slide-up">
-        <!-- Register Card -->
-        <div class="glass-effect rounded-3xl shadow-2xl p-8 md:p-10">
-            <!-- Header -->
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-yellow-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce-slow">
-                    <i class="fas fa-user-plus text-2xl text-gray-900"></i>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Rejoignez RecruitAI</h1>
-                <p class="text-gray-600">Créez votre compte et révolutionnez votre recrutement</p>
-            </div>
-
-            <!-- Register Form -->
-            <form method="POST" action="{{ route('register') }}" class="space-y-6">
-                <!-- CSRF Token -->
-                <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                
-                <!-- Name Field -->
-                <div class="space-y-2">
-                    <label for="name" class="block text-sm font-semibold text-gray-700">
-                        <i class="fas fa-user mr-2 text-purple-600"></i>
-                        Nom complet
-                    </label>
-                    <input 
-                        id="name" 
-                        name="name" 
-                        type="text" 
-                        required 
-                        autofocus
-                        autocomplete="name"
-                        value="{{ old('name') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent input-focus bg-white bg-opacity-80 placeholder-gray-500"
-                        placeholder="Votre nom complet"
-                    >
-                    @error('name')
-                        <p class="text-red-500 text-sm mt-1 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            {{ $message }}
-                        </p>
-                    @enderror
-                </div>
-
-                <!-- Email Field -->
-                <div class="space-y-2">
-                    <label for="email" class="block text-sm font-semibold text-gray-700">
-                        <i class="fas fa-envelope mr-2 text-purple-600"></i>
-                        Adresse e-mail
-                    </label>
-                    <input 
-                        id="email" 
-                        name="email" 
-                        type="email" 
-                        required 
-                        autocomplete="username"
-                        value="{{ old('email') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent input-focus bg-white bg-opacity-80 placeholder-gray-500"
-                        placeholder="votre@email.com"
-                    >
-                    @error('email')
-                        <p class="text-red-500 text-sm mt-1 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            {{ $message }}
-                        </p>
-                    @enderror
-                </div>
-
-                <!-- Password Field -->
-                <div class="space-y-2">
-                    <label for="password" class="block text-sm font-semibold text-gray-700">
-                        <i class="fas fa-lock mr-2 text-purple-600"></i>
-                        Mot de passe
-                    </label>
-                    <div class="relative">
-                        <input 
-                            id="password" 
-                            name="password" 
-                            type="password" 
-                            required 
-                            autocomplete="new-password"
-                            onkeyup="checkPasswordStrength(this.value)"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent input-focus bg-white bg-opacity-80 placeholder-gray-500 pr-12"
-                            placeholder="••••••••"
-                        >
-                        <button 
-                            type="button" 
-                            onclick="togglePassword('password')"
-                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600 transition-colors"
-                        >
-                            <i id="toggleIcon1" class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <!-- Password Strength Meter -->
-                    <div class="strength-meter">
-                        <div id="strengthFill" class="strength-fill bg-red-500" style="width: 0%"></div>
-                    </div>
-                    <p id="strengthText" class="text-xs text-gray-500 mt-1">Utilisez au moins 8 caractères avec des lettres et chiffres</p>
-                    @error('password')
-                        <p class="text-red-500 text-sm mt-1 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            {{ $message }}
-                        </p>
-                    @enderror
-                </div>
-
-                <!-- Confirm Password Field -->
-                <div class="space-y-2">
-                    <label for="password_confirmation" class="block text-sm font-semibold text-gray-700">
-                        <i class="fas fa-lock mr-2 text-purple-600"></i>
-                        Confirmer le mot de passe
-                    </label>
-                    <div class="relative">
-                        <input 
-                            id="password_confirmation" 
-                            name="password_confirmation" 
-                            type="password" 
-                            required 
-                            autocomplete="new-password"
-                            onkeyup="checkPasswordMatch()"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent input-focus bg-white bg-opacity-80 placeholder-gray-500 pr-12"
-                            placeholder="••••••••"
-                        >
-                        <button 
-                            type="button" 
-                            onclick="togglePassword('password_confirmation')"
-                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-purple-600 transition-colors"
-                        >
-                            <i id="toggleIcon2" class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <p id="matchText" class="text-xs text-gray-500 mt-1">Répétez votre mot de passe</p>
-                    @error('password_confirmation')
-                        <p class="text-red-500 text-sm mt-1 flex items-center">
-                            <i class="fas fa-exclamation-circle mr-1"></i>
-                            {{ $message }}
-                        </p>
-                    @enderror
-                </div>
-
-               
-
-                <!-- Submit Button -->
-                <button 
-                    type="submit" 
-                    id="submitBtn"
-                    class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
-                >
-                    <i class="fas fa-user-plus"></i>
-                    <span>Créer mon compte</span>
-                </button>
-
-                <!-- Divider -->
-                <div class="relative my-6">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-4 bg-white text-gray-500 rounded-full">ou s'inscrire avec</span>
-                    </div>
-                </div>
-
-                <!-- Social Register Buttons -->
-                <div class="grid grid-cols-2 gap-4">
-                    <button 
-                        type="button" 
-                        class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                        <i class="fab fa-google text-red-500 mr-2"></i>
-                        Google
-                    </button>
-                    
-                    <button 
-                        type="button" 
-                        class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                        <i class="fab fa-linkedin text-blue-600 mr-2"></i>
-                        LinkedIn
-                    </button>
-                </div>
-
-                <!-- Login Link -->
-                <div class="text-center pt-4">
-                    <p class="text-sm text-gray-600">
-                        Déjà inscrit ? 
-                        <a href="{{ route('login') }}" class="text-purple-600 hover:text-purple-500 font-semibold underline transition-colors">
-                            Connectez-vous ici
-                        </a>
+    <!-- Main Content -->
+    <div class="relative z-10 min-h-screen flex items-center justify-center px-4 pt-20 pb-12">
+        <div class="max-w-6xl w-full grid lg:grid-cols-2 gap-12 items-center">
+            
+            <!-- Left Side - Welcome Content -->
+            <div class="animate-slide-in-left text-white">
+                <div class="mb-8">
+                    <h1 class="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+                        Rejoignez la révolution du
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                            recrutement IA
+                        </span>
+                    </h1>
+                    <p class="text-xl text-gray-300 mb-8 leading-relaxed">
+                        Créez votre compte gratuitement et découvrez comment l'intelligence artificielle 
+                        peut transformer votre processus de recrutement.
                     </p>
                 </div>
-            </form>
-        </div>
 
-        <!-- Bottom Benefits -->
-        <div class="mt-6 grid grid-cols-3 gap-4 text-center text-white text-xs">
-            <div class="bg-white bg-opacity-20 rounded-xl p-3 backdrop-blur-sm">
-                <i class="fas fa-shield-check text-lg text-yellow-300 mb-2"></i>
-                <p>100% Sécurisé</p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-3 backdrop-blur-sm">
-                <i class="fas fa-clock text-lg text-yellow-300 mb-2"></i>
-                <p>Inscription rapide</p>
-            </div>
-            <div class="bg-white bg-opacity-20 rounded-xl p-3 backdrop-blur-sm">
-                <i class="fas fa-gift text-lg text-yellow-300 mb-2"></i>
-                <p>Essai gratuit</p>
-            </div>
-        </div>
-    </div>
+                <!-- Features Preview -->
+                <div class="space-y-4 mb-8">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-500 bg-opacity-20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-brain text-blue-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">IA Prédictive Avancée</h3>
+                            <p class="text-gray-400 text-sm">Matching intelligent avec 95% de précision</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-500 bg-opacity-20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-search text-green-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">Recherche Sémantique</h3>
+                            <p class="text-gray-400 text-sm">Trouvez les talents parfaits en secondes</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-purple-500 bg-opacity-20 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-chart-line text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">Analytics en Temps Réel</h3>
+                            <p class="text-gray-400 text-sm">Insights pour optimiser vos recrutements</p>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Floating Elements -->
-    <div class="absolute right-10 top-1/2 transform -translate-y-1/2 hidden lg:block animate-float">
-        <div class="bg-white bg-opacity-20 rounded-2xl p-6 backdrop-blur-sm">
-            <i class="fas fa-rocket text-4xl text-yellow-300 mb-4"></i>
-            <p class="text-white text-sm">Démarrage Rapide</p>
-        </div>
-    </div>
-    <div class="absolute left-10 top-1/3 hidden lg:block animate-float" style="animation-delay: 1s;">
-        <div class="bg-white bg-opacity-20 rounded-2xl p-6 backdrop-blur-sm">
-            <i class="fas fa-star text-4xl text-yellow-300 mb-4"></i>
-            <p class="text-white text-sm">Excellence IA</p>
+                <!-- Trust Indicators -->
+                <div class="flex items-center space-x-6 text-gray-400">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-white">15k+</div>
+                        <div class="text-sm">Candidats</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-white">800+</div>
+                        <div class="text-sm">Entreprises</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-white">98%</div>
+                        <div class="text-sm">Satisfaction</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Registration Form -->
+            <div class="animate-slide-in-right">
+                <div class="register-card rounded-3xl shadow-2xl p-8 md:p-10">
+                    <!-- Header -->
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-gradient-to-r from-primary to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse-glow">
+                            <i class="fas fa-rocket text-2xl text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">Créer un compte</h2>
+                    </div>
+
+                    <!-- Registration Form -->
+                    <form id="registerForm" method="POST" action="{{ route('register') }}" class="space-y-6">
+                        <!-- CSRF Token -->
+                        @csrf
+                        
+                        <!-- Name Field -->
+                        <div class="space-y-2">
+                            <label for="name" class="block text-sm font-semibold text-gray-700">
+                                <i class="fas fa-user mr-2 text-primary"></i>
+                                Nom complet
+                            </label>
+                            <input 
+                                id="name" 
+                                name="name" 
+                                type="text" 
+                                required 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent input-glow transition-all duration-300 bg-white placeholder-gray-500"
+                                placeholder="Votre nom complet"
+                            >
+                            @error('name')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-semibold text-gray-700">
+                                <i class="fas fa-envelope mr-2 text-primary"></i>
+                                Adresse e-mail
+                            </label>
+                            <input 
+                                id="email" 
+                                name="email" 
+                                type="email" 
+                                required 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent input-glow transition-all duration-300 bg-white placeholder-gray-500"
+                                placeholder="votre@email.com"
+                            >
+                            <div id="emailFeedback" class="text-xs mt-1 hidden">
+                                <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                <span class="text-green-600">Email valide</span>
+                            </div>
+                            @error('email')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <label for="password" class="block text-sm font-semibold text-gray-700">
+                                <i class="fas fa-lock mr-2 text-primary"></i>
+                                Mot de passe
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    id="password" 
+                                    name="password" 
+                                    type="password" 
+                                    required 
+                                    onkeyup="checkPasswordStrength(this.value)"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent input-glow transition-all duration-300 bg-white placeholder-gray-500 pr-12"
+                                    placeholder="••••••••"
+                                >
+                                <button 
+                                    type="button" 
+                                    onclick="togglePassword('password')"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
+                                >
+                                    <i id="toggleIcon1" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <!-- Password Strength Meter -->
+                            <div class="strength-meter">
+                                <div id="strengthFill" class="strength-fill bg-red-500" style="width: 0%"></div>
+                            </div>
+                            <p id="strengthText" class="text-xs text-gray-500 mt-1">Utilisez au moins 8 caractères avec des lettres et chiffres</p>
+                            @error('password')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="space-y-2">
+                            <label for="password_confirmation" class="block text-sm font-semibold text-gray-700">
+                                <i class="fas fa-lock mr-2 text-primary"></i>
+                                Confirmer le mot de passe
+                            </label>
+                            <div class="relative">
+                                <input 
+                                    id="password_confirmation" 
+                                    name="password_confirmation" 
+                                    type="password" 
+                                    required 
+                                    onkeyup="checkPasswordMatch()"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent input-glow transition-all duration-300 bg-white placeholder-gray-500 pr-12"
+                                    placeholder="••••••••"
+                                >
+                                <button 
+                                    type="button" 
+                                    onclick="togglePassword('password_confirmation')"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
+                                >
+                                    <i id="toggleIcon2" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p id="matchText" class="text-xs text-gray-500 mt-1">Répétez votre mot de passe</p>
+                            @error('password_confirmation')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="flex items-center space-x-2">
+                            <input 
+                                id="terms" 
+                                name="terms" 
+                                type="checkbox" 
+                                required 
+                                class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                            >
+                            <label for="terms" class="text-sm text-gray-700">
+                                J'accepte les <a href="#" class="text-primary hover:text-blue-700 underline">Conditions d'utilisation</a> et la <a href="#" class="text-primary hover:text-blue-700 underline">Politique de confidentialité</a>
+                            </label>
+                            @error('terms')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button 
+                            type="submit" 
+                            id="submitBtn"
+                            class="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                        >
+                            <i class="fas fa-rocket"></i>
+                            <span>Créer mon compte</span>
+                        </button>
+
+                        <!-- Login Link -->
+                        <div class="text-center pt-4">
+                            <p class="text-sm text-gray-600">
+                                Déjà inscrit ? 
+                                <a href="/login" class="text-primary hover:text-blue-700 font-semibold underline transition-colors">
+                                    Connectez-vous ici
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Benefits -->
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 text-white">
+                        <i class="fas fa-shield-check text-lg text-accent mb-2"></i>
+                        <p class="text-xs">100% Sécurisé</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 text-white">
+                        <i class="fas fa-gift text-lg text-accent mb-2"></i>
+                        <p class="text-xs">14 jours gratuits</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 text-white">
+                        <i class="fas fa-headset text-lg text-accent mb-2"></i>
+                        <p class="text-xs">Support 24/7</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -392,21 +447,31 @@
             }
         }
 
-        // Add floating animation on form focus
-        const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('transform', 'scale-105');
-            });
+        // Email validation
+        const emailInput = document.getElementById('email');
+        const emailFeedback = document.getElementById('emailFeedback');
+        
+        emailInput.addEventListener('input', function() {
+            const email = this.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('transform', 'scale-105');
-            });
+            if (email && emailRegex.test(email)) {
+                this.classList.add('border-green-300');
+                this.classList.remove('border-gray-300', 'border-red-300');
+                emailFeedback.classList.remove('hidden');
+            } else if (email) {
+                this.classList.add('border-red-300');
+                this.classList.remove('border-gray-300', 'border-green-300');
+                emailFeedback.classList.add('hidden');
+            } else {
+                this.classList.add('border-gray-300');
+                this.classList.remove('border-green-300', 'border-red-300');
+                emailFeedback.classList.add('hidden');
+            }
         });
 
-        // Form validation animation
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             const termsCheckbox = document.getElementById('terms');
             
@@ -420,35 +485,38 @@
                 return;
             }
             
+            // Show loading state
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Création du compte...';
             submitBtn.disabled = true;
+
+            // Let the form submit naturally to the server
+            // The server will handle validation, saving to the database, and redirection
         });
 
-        // Auto-hide alerts after 5 seconds
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.text-red-500');
-            alerts.forEach(alert => {
-                if (alert.tagName === 'P') {
-                    alert.style.transition = 'opacity 0.5s ease';
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500);
-                }
+        // Add floating animation to form elements
+        const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
             });
-        }, 8000);
-
-        // Real-time email validation
-        const emailInput = document.getElementById('email');
-        emailInput.addEventListener('input', function() {
-            const email = this.value;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             
-            if (email && !emailRegex.test(email)) {
-                this.classList.add('border-red-300');
-                this.classList.remove('border-gray-300');
-            } else {
-                this.classList.remove('border-red-300');
-                this.classList.add('border-gray-300');
-            }
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+
+        // Parallax effect for floating orbs
+        window.addEventListener('mousemove', function(e) {
+            const orbs = document.querySelectorAll('.floating-orb');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            orbs.forEach((orb, index) => {
+                const speed = (index + 1) * 0.5;
+                const x = (mouseX - 0.5) * speed * 50;
+                const y = (mouseY - 0.5) * speed * 50;
+                orb.style.transform = `translate(${x}px, ${y}px)`;
+            });
         });
     </script>
 </body>

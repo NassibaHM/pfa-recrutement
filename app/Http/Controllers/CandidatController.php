@@ -13,6 +13,8 @@ use App\Models\Critere;
 use App\Notifications\CandidatureStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
 
 class CandidatController extends BaseController
 {
@@ -467,7 +469,39 @@ class CandidatController extends BaseController
             return response()->json(['success' => false, 'message' => 'Erreur lors de la suppression: ' . $e->getMessage()], 500);
         }
     }
+    public function profile()
+    {
+        return view('candidats.profile');
+    }
 
+    public function updateProfile(Request $request)
+{
+    $user = Auth::user();
+
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'first_name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+        'password' => ['nullable', 'confirmed', 'min:8'],
+    ]);
+
+    $user->name = $validated['name'];
+    $user->first_name = $validated['first_name'];
+    $user->email = $validated['email'];
+
+    if ($request->filled('password')) {
+        $user->password = Hash::make($validated['password']);
+    }
+
+    User::where('id', $user->id)->update([
+        'name' => $user->name,
+        'first_name' => $user->first_name,
+        'email' => $user->email,
+        'password' => $user->password,
+    ]);
+    
+    return redirect()->route('candidat.profile')->with('success', 'Profil mis à jour avec succès.');
+}
     public function store(Request $request)
     {
         $validated = $request->validate([

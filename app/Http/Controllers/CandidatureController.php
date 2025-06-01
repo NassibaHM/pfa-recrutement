@@ -201,4 +201,13 @@ class CandidatureController extends Controller
         $offreId = $offre_id;
         return view('candidats.index-recruteur', compact('offres', 'candidatures', 'criteres', 'offreId'));
     }
+    public function markAsRead($id)
+{
+    $notification = \App\Models\Notification::findOrFail($id);
+    if ($notification->user_id === Auth::id()) {
+        $notification->update(['read' => true]);
+        return response()->json(['success' => true]);
+    }
+    return response()->json(['success' => false], 403);
+}
 }

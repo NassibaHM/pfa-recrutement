@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\DashboardController; 
 use App\Http\Controllers\{
     Auth\AuthenticatedSessionController,
     ProfileController,
@@ -29,24 +30,13 @@ Route::get('/force-logout', function () {
     Auth::logout();
     return redirect('/login');
 })->name('force-logout');
-
-// Tableau de bord (redirige selon le rôle)
-Route::get('/dashboard', function () {
-    if (Auth::user()->role === 'recruteur') {
-        $criteres = \App\Models\Critere::orderBy('id', 'desc')->paginate(5);
-        return view('dashboard', compact('criteres'));
-    } elseif (Auth::user()->role === 'candidat') {
-        return redirect()->route('candidat.welcome');
-    }
-    abort(403, 'Rôle inconnu.');
-})->middleware(['auth'])->name('dashboard');
-
-// Gestion du profil (accessible à tous les rôles connectés)
+// Tableau de bord (utiliser le contrôleur DashboardController)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/candidat/profile', [CandidatController::class, 'profile'])->name('candidat.profile');
+    Route::patch('/candidat/profile', [CandidatController::class, 'updateProfile'])->name('candidat.profile.update');
 });
+
 
 // Debug route to check database
 Route::get('/check-database', function () {

@@ -29,6 +29,8 @@
      "author": "",
      "license": "ISC",
      "dependencies": {
+          "chart.js": "^4.4.9",
+          "font-awesome": "^4.7.0",
           "pfa-recrutement": "file:"
      }
 }

@@ -12,6 +12,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'first_name',
         'email',
         'password',
         'role',
@@ -22,27 +23,28 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    public function candidatures()
-    {
-        return $this->hasMany(Candidature::class);
-    }
-
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
 
     public function setRoleAttribute($value)
     {
         $this->attributes['role'] = strtolower($value);
     }
 
-    // Désactiver le canal mail
     public function routeNotificationForMail($notification)
     {
-        return false; // Empêche l'envoi d'emails
+        return false;
+    }
+
+    public function candidatures()
+    {
+        return $this->hasMany(Candidature::class, 'user_id');
+    }
+
+    public function customNotifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id');
     }
 }

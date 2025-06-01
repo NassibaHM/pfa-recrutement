@@ -18,7 +18,8 @@ class Offre extends Model
         'competences_manageriales',
         'experience', 
         'date_entretien', 
-        'date_selection'
+        'date_selection',
+        'statut',
     ];
     public function criteres()
     {

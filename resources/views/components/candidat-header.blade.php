@@ -1,7 +1,7 @@
 <header class="bg-white shadow-sm border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center h-16">
-            <div class="ml-auto flex items-center space-x-4">
+        <div class="flex justify-end items-center h-16">
+            <div class="flex items-center space-x-4">
                 <!-- Notification Icon -->
                 <div class="relative">
                     <button class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors bell-ring" onclick="showNotificationsModal()">
@@ -11,10 +11,10 @@
                         @endif
                     </button>
                 </div>
+
                 <!-- User Profile -->
-                <span class="text-sm text-gray-600">
-                    Bienvenue, <strong>{{ Auth::user()->name }}</strong>
-                </span>
+               
+
                 <div class="w-8 h-8 bg-gradient-to-r from-[#1e40af] to-[#0f172a] rounded-full flex items-center justify-center">
                     <span class="text-sm font-medium text-white">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}

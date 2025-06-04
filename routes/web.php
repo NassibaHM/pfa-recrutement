@@ -77,7 +77,7 @@ Route::middleware(['auth', 'role:recruteur'])->group(function () {
 // === Candidat ===
 Route::middleware(['auth', 'role:candidat'])->group(function () {
     Route::get('/candidat/welcome', [CandidatController::class, 'index'])->name('candidat.welcome');
-
+    Route::post('/candidature/store', [CandidatureController::class, 'store'])->name('candidatures.store');
     // Liste des offres accessibles au candidat
     Route::get('/candidat/offres', [OffreCandidatController::class, 'index'])->name('candidat.offres');
     Route::get('/candidat/offres/{id}', [OffreCandidatController::class, 'show'])->name('candidat.offres.show');
